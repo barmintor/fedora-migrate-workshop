@@ -16,11 +16,13 @@ module FedoraMigrate::Hooks
   # Called from FedoraMigrate::RDFDatastreamMover
   def before_rdf_datastream_migration
     # additional actions as needed
+    puts "migrating rdf from #{source.pid}/#{source.dsid}"
   end
 
   # Called from FedoraMigrate::RDFDatastreamMover
   def after_rdf_datastream_migration
     # additional actions as needed
+    puts "migrated rdf from #{source.pid}/#{source.dsid}"
   end
 
   # Called from FedoraMigrate::DatastreamMover
@@ -75,8 +77,8 @@ task migrate: :environment do
   migration = Proc.new do |pid|
     source = FedoraMigrate.source.connection.find(pid)
     target = nil
-    options = {}
-    mover = FedoraMigrate::ObjectMover.new(source, target, options: options)
+    options = { convert: "descMetadata" }
+    mover = FedoraMigrate::ObjectMover.new(source, target, options)
     mover.migrate
     target = mover.target
     mover = FedoraMigrate::RelsExtDatastreamMover.new(source, target).migrate
