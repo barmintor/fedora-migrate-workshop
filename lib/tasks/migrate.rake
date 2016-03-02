@@ -51,7 +51,7 @@ FedoraMigrate::RelsExtDatastreamMover.class_eval do
       RDF::URI.new(fc3_uri)
     end
   end
-  def has_missing_object?(statement)
+  def missing_object?(statement)
     return false unless (statement.object.to_s =~ /^info:fedora\/.+:.+/)
     return false if ActiveFedora::Base.exists?(id_component(statement.object))
     report << "could not migrate relationship #{statement.predicate} because #{statement.object} doesn't exist in Fedora 4"
@@ -64,15 +64,24 @@ task clean: :environment do
 end
 desc "Migrate all my objects"
 task migrate: :environment do
+  # load the model classes
   Work.name
   GenericFile.name
   Collection.name
   AdministrativeSet.name
-  usna = FedoraMigrate.migrate_repository(namespace: "usna",options:{})
-
-  archives = FedoraMigrate.migrate_repository(namespace: "archives",options:{})
-  report = FedoraMigrate::MigrationReport.new
-  report.results.merge! usna.report.results
-  report.results.merge! archives.report.results
-  report.report_failures STDOUT
+  assets = ["usna:3","usna:4","usna:5","usna:6","usna:7","usna:8","usna:9"]
+  works = ["archives:1408042", "archives:1419123", "archives:1667751"]
+  collections = ["collection:1", "collection:2"]
+  migration = Proc.new do |pid|
+    source = FedoraMigrate.source.connection.find(pid)
+    target = nil
+    options = {}
+    mover = FedoraMigrate::ObjectMover.new(source, target, options: options)
+    mover.migrate
+    target = mover.target
+    mover = FedoraMigrate::RelsExtDatastreamMover.new(source, target).migrate
+  end
+  assets.each { |pid| migration.call(pid) }
+  works.each { |pid| migration.call(pid) }
+  collections.each { |pid| migration.call(pid) }
 end
