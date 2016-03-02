@@ -1,3 +1,5 @@
+require 'fedora_migrate/works'
+
 module FedoraMigrate::Hooks
 
   # @source is a Rubydora object
@@ -88,10 +90,11 @@ task migrate: :environment do
     source = FedoraMigrate.source.connection.find(pid)
     target = nil
     options = { convert: "descMetadata" }
-    mover = FedoraMigrate::ObjectMover.new(source, target, options)
+    mover = FedoraMigrate::Works::FileSetMover.new(source, target, options)
     mover.migrate
     target = mover.target
     mover = FedoraMigrate::RelsExtDatastreamMover.new(source, target).migrate
+    target.create_derivatives if target.is_a?(GenericFile)
   end
   assets.each { |pid| migration.call(pid) }
   works.each { |pid| migration.call(pid) }
