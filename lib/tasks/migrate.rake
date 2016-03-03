@@ -47,6 +47,16 @@ module FedoraMigrate::Hooks
     # additional actions as needed
   end
 
+  # Called from FedoraMigrate::Works::StructureMover
+  def before_structure_migration
+    # additional actions as needed
+  end
+
+  # Called from FedoraMigrate::Works::StructureMover
+  def after_structure_migration
+    # additional actions as needed
+  end
+
 end
 
 ActiveFedora::File.class_eval do
@@ -86,6 +96,10 @@ task migrate: :environment do
   assets = ["usna:3","usna:4","usna:5","usna:6","usna:7","usna:8","usna:9"]
   works = ["archives:1408042", "archives:1419123", "archives:1667751"]
   collections = ["collection:1", "collection:2"]
+  # to minimize turnaround time, we'll just load a single object
+  assets = ["usna:5","usna:6","usna:7","usna:8"]
+  works = ["archives:1667751"]
+  collections = []
   migration = Proc.new do |pid|
     source = FedoraMigrate.source.connection.find(pid)
     target = nil
@@ -95,6 +109,9 @@ task migrate: :environment do
     target = mover.target
     mover = FedoraMigrate::RelsExtDatastreamMover.new(source, target).migrate
     target.create_derivatives if target.is_a?(GenericFile)
+    if target.is_a?(Work)
+      FedoraMigrate::Works::StructureMover.new(source, target, options).migrate
+    end
   end
   assets.each { |pid| migration.call(pid) }
   works.each { |pid| migration.call(pid) }
