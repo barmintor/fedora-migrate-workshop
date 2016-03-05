@@ -1,5 +1,8 @@
 class Work < ActiveFedora::Base
   include Hydra::Works::WorkBehavior
+  property :state, predicate: ActiveFedora::RDF::Fcrepo::Model.state, multiple: false do |index|
+    index.as :symbol, :facetable
+  end
   property :identifier, predicate: ::RDF::Vocab::DC.identifier do |index|
     index.as :symbol, :facetable
   end

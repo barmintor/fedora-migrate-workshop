@@ -11,6 +11,16 @@ module FedoraMigrate::Hooks
   # Called from FedoraMigrate::ObjectMover
   def after_object_migration
     # additional actions as needed
+    if source.state
+      case source.state
+      when 'D'
+        target.state = ActiveFedora::RDF::Fcrepo::Model.Deleted
+      when 'I'
+        target.state = ActiveFedora::RDF::Fcrepo::Model.Inactive
+      else
+        target.state = ActiveFedora::RDF::Fcrepo::Model.Active
+      end
+    end
   end
 
   # Called from FedoraMigrate::RDFDatastreamMover
