@@ -108,7 +108,12 @@ task migrate: :environment do
     mover.migrate
     target = mover.target
     mover = FedoraMigrate::RelsExtDatastreamMover.new(source, target).migrate
-    target.create_derivatives if target.is_a?(GenericFile)
+    Hydra::Derivatives.fits_path = '/usr/local/fits/fits-0.6.2/fits.sh'
+    if target.is_a?(GenericFile)
+      target.create_derivatives
+      Hydra::Works::CharacterizationService.run(target)
+      target.save
+    end
     if target.is_a?(Work)
       FedoraMigrate::Works::StructureMover.new(source, target, options).migrate
     end
